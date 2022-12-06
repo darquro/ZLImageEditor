@@ -1067,34 +1067,43 @@ open class ZLEditImageViewController: UIViewController {
         guard let selectedAdjustTool = selectedAdjustTool, let editImageAdjustRef = editImageAdjustRef else {
             return
         }
-        var resultImage: UIImage?
-        
         switch selectedAdjustTool {
         case .brightness:
             if brightness == value {
                 return
             }
             brightness = value
-            resultImage = editImageAdjustRef.zl.adjust(brightness: value, contrast: contrast, saturation: saturation)
         case .contrast:
             if contrast == value {
                 return
             }
             contrast = value
-            resultImage = editImageAdjustRef.zl.adjust(brightness: brightness, contrast: value, saturation: saturation)
         case .saturation:
             if saturation == value {
                 return
             }
             saturation = value
-            resultImage = editImageAdjustRef.zl.adjust(brightness: brightness, contrast: contrast, saturation: value)
         }
-        
-        guard let resultImage = resultImage else {
-            return
+
+        if #available(iOS 13.0, *) {
+            Task.detached {
+                let resultImage = await editImageAdjustRef.zl.adjust(brightness: self.brightness, contrast: self.contrast, saturation: self.saturation)
+                guard let resultImage = resultImage else {
+                    return
+                }
+                Task { @MainActor in
+                    self.editImage = resultImage
+                    self.imageView.image = self.editImage
+                }
+            }
+        } else {
+            let resultImage = editImageAdjustRef.zl.adjust(brightness: brightness, contrast: contrast, saturation: saturation)
+            guard let resultImage = resultImage else {
+                return
+            }
+            editImage = resultImage
+            imageView.image = editImage
         }
-        editImage = resultImage
-        imageView.image = editImage
     }
     
     func endAdjust() {

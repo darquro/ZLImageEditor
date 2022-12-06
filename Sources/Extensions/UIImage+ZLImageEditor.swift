@@ -381,6 +381,22 @@ extension ZLImageEditorWrapper where Base: UIImage {
         let outputCIImage = filter?.outputImage
         return outputCIImage?.zl.toUIImage()
     }
+
+    @available(iOS 13.0, *)
+    func adjust(brightness: Float, contrast: Float, saturation: Float) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            guard let ciImage = toCIImage() else {
+                continuation.resume(returning: base)
+                return
+            }
+            let outputCIImage = ciImage.applyingFilter("CIColorControls", parameters: [
+                kCIInputBrightnessKey: ZLImageEditorConfiguration.AdjustTool.brightness.filterValue(brightness),
+                kCIInputContrastKey: ZLImageEditorConfiguration.AdjustTool.contrast.filterValue(contrast),
+                kCIInputSaturationKey: ZLImageEditorConfiguration.AdjustTool.saturation.filterValue(saturation)
+            ])
+            continuation.resume(returning: outputCIImage.zl.toUIImage())
+        }
+    }
 }
 
 extension ZLImageEditorWrapper where Base: CIImage {
